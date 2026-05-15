@@ -147,13 +147,16 @@
                 <div class="hero-section">
                     <div class="key-points">
                         <div class="key-point">
+                            <img class="key-point-icon" src="./static/img/icons/quality.svg" alt="Generation Icon">
                             <div class="key-point-text"><strong>Better generation.</strong> Over 10× faster convergence than prior baselines (800 epochs). RAEv2 achieves state-of-the-art gFID and FDr<sup>6</sup> in just <strong>80 epochs</strong>, with no post-training.</div>
                         </div>
                         <div class="key-point">
+                            <img class="key-point-icon" src="./static/img/icons/latent.svg" alt="Reconstruction Icon">
                             <div class="key-point-text"><strong>Better reconstruction.</strong> A generalized formulation of RAE improves reconstruction without encoder finetuning or specialized data.</div>
                         </div>
                         <div class="key-point">
-                            <div class="key-point-text"><strong>Efficient inference.</strong> When used with RAE, REPA itself can be reused for guidance &mdash; eliminating the need for a secondary weaker diffusion model (AutoGuidance) or an additional forward pass (CFG).</div>
+                            <img class="key-point-icon" src="./static/img/icons/speed.svg" alt="Efficiency Icon">
+                            <div class="key-point-text"><strong>Efficient inference.</strong> When used with RAE, REPA itself can be reused for guidance. This eliminates the need for a secondary weaker diffusion model (AutoGuidance) or an additional forward pass (CFG).</div>
                         </div>
 
                         <div class="button-row">
@@ -187,11 +190,11 @@
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">2</span>
-                <p class="key-finding-text"><strong>RAE and REPA exhibit complementary mechanisms.</strong> RAE captures global semantics; REPA regularizes spatial structure. Using the same representation as both encoder and intermediate target consistently improves generation across 27 encoders &mdash; and lets stronger encoders (DINOv3-L) win on generation too.</p>
+                <p class="key-finding-text"><strong>RAE and REPA exhibit complementary mechanisms.</strong> RAE captures global semantics; REPA regularizes spatial structure. Using the same representation as both encoder and intermediate target consistently improves generation across 27 encoders. This also lets stronger encoders (DINOv3-L) win on generation.</p>
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">3</span>
-                <p class="key-finding-text"><strong>REPA is x-prediction in RAE latent space.</strong> Re-parameterizing the DiT output as x-prediction lets the lightweight REPA head act as the weak baseline for internal guidance &mdash; no AutoGuidance model, no extra forward pass, halving NFEs at inference.</p>
+                <p class="key-finding-text"><strong>REPA is x-prediction in RAE latent space.</strong> Re-parameterizing the DiT output as x-prediction lets the lightweight REPA head act as the weak baseline for internal guidance. This removes the AutoGuidance model and the extra forward pass, halving NFEs at inference.</p>
             </div>
         </div>
 
@@ -203,7 +206,7 @@
 
             <div class="sidenote-container">
                 <p class="text">
-                    Representation Autoencoders (<a href="https://rae-dit.github.io/" target="_blank">RAE</a>) replace the traditional VAE in latent diffusion with a <em>pretrained</em> vision encoder (DINOv2, DINOv3, SigLIP, ...) plus a learned decoder. This is a step toward unified tokenization for both understanding and generation. But several practical issues persist: reconstruction lags behind specialized VAEs, RAE is <strong>incompatible with classifier-free guidance</strong> and relies on a separately-trained AutoGuidance model, and the encoder representation itself is underexplored &mdash; prior work always uses the final layer.
+                    Representation Autoencoders (<a href="https://rae-dit.github.io/" target="_blank">RAE</a>) replace the traditional VAE in latent diffusion with a <em>pretrained</em> vision encoder (DINOv2, DINOv3, SigLIP, ...) plus a learned decoder. This is a step toward unified tokenization for both understanding and generation. But several practical issues persist: reconstruction lags behind specialized VAEs, RAE is <strong>incompatible with classifier-free guidance</strong> and relies on a separately-trained AutoGuidance model, and the encoder representation itself is underexplored. Prior work always uses the final layer.
                 </p>
                 <aside class="sidenote">All three issues are addressed below by three independent design choices, each of which is <em>training-free</em> on the encoder side.</aside>
             </div>
@@ -216,7 +219,7 @@
                     </div>
                     <figcaption>
                         <strong>Improved Representation Autoencoders.</strong>
-                        <em>Left:</em> RAEv2 exhibits Pareto-optimal reconstruction&ndash;generation at less than half the encoder FLOPs &mdash; no encoder finetuning, no specialized data.
+                        <em>Left:</em> RAEv2 exhibits Pareto-optimal reconstruction&ndash;generation at less than half the encoder FLOPs, with no encoder finetuning or specialized data.
                         <em>Right:</em> over 10× faster convergence, reaching state-of-the-art gFID of <strong>1.06</strong> in just 80 epochs.
                     </figcaption>
                 </figure>
