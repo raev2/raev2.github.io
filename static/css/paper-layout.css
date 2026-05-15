@@ -5,7 +5,7 @@
 /* === CSS CUSTOM PROPERTIES === */
 :root {
     /* Layout Dimensions (reduced by 1.2x) */
-    --layout-toc-width: 150px;
+    --layout-toc-width: 225px;
     --layout-content-width: 720px;
     --layout-sidenote-width: 183px;
     --layout-gap: 33px;
@@ -16,7 +16,7 @@
      * - TOC will be positioned: (content left edge) - toc-width - this gap
      * - Sidenotes will be positioned: (content right edge) + this gap
      */
-    --layout-side-gap: 256px;
+    --layout-side-gap: 180px;
 
     /* Colors */
     --bg-page: #ffffff;
