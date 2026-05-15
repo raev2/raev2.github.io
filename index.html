@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Improved Baselines with Representation Autoencoders</title>
+        <link rel="icon" type="image/png" href="static/img/kitty.png">
+
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Canonical, Robots -->
+        <link rel="canonical" href="https://raev2.github.io/">
+        <meta name="robots" content="index, follow">
+
+        <!-- Google Scholar meta tags -->
+        <meta name="citation_title" content="Improved Baselines with Representation Autoencoders">
+        <meta name="citation_author" content="Singh, Jaskirat">
+        <meta name="citation_author" content="Zheng, Boyang">
+        <meta name="citation_author" content="Wu, Zongze">
+        <meta name="citation_author" content="Zhang, Richard">
+        <meta name="citation_author" content="Shechtman, Eli">
+        <meta name="citation_author" content="Xie, Saining">
+        <meta name="citation_publication_date" content="2026/05/15">
+        <meta name="citation_online_date" content="2026/05/15">
+        <meta name="citation_language" content="en">
+        <meta name="citation_abstract" content="Representation Autoencoders (RAE) replace traditional VAEs with pretrained vision encoders. We study three design choices: (1) a training-free generalized RAE using the sum of the last K encoder layers; (2) a complementary working mechanism between RAE and REPA that lets the same representation serve as both encoder and intermediate target; (3) REPA viewed as x-prediction in RAE latent space, which lets the REPA head itself provide guidance for free. RAEv2 yields >10x faster convergence over RAE and a state-of-the-art gFID of 1.06 in 80 epochs on ImageNet-256.">
+
+        <!-- JSON-LD Structured Data -->
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "ScholarlyArticle",
+          "headline": "Improved Baselines with Representation Autoencoders",
+          "name": "Improved Baselines with Representation Autoencoders",
+          "description": "RAEv2: an improved baseline for representation autoencoders. Generalized encoder, complementary RAE+REPA, and free guidance via REPA-head x-prediction give >10x faster convergence and SOTA gFID of 1.06 in 80 epochs on ImageNet-256.",
+          "author": [
+            {"@type": "Person", "name": "Jaskirat Singh", "affiliation": {"@type": "Organization", "name": "Adobe Research / ANU"}},
+            {"@type": "Person", "name": "Boyang Zheng", "affiliation": {"@type": "Organization", "name": "NYU"}},
+            {"@type": "Person", "name": "Zongze Wu", "affiliation": {"@type": "Organization", "name": "Adobe Research"}},
+            {"@type": "Person", "name": "Richard Zhang", "affiliation": {"@type": "Organization", "name": "Adobe Research"}},
+            {"@type": "Person", "name": "Eli Shechtman", "affiliation": {"@type": "Organization", "name": "Adobe Research"}},
+            {"@type": "Person", "name": "Saining Xie", "affiliation": {"@type": "Organization", "name": "NYU"}}
+          ],
+          "datePublished": "2026-05-15",
+          "dateModified": "2026-05-15",
+          "url": "https://raev2.github.io/",
+          "mainEntityOfPage": "https://raev2.github.io/",
+          "isAccessibleForFree": true,
+          "inLanguage": "en"
+        }
+        </script>
+
+        <!-- Open Graph -->
+        <meta property="og:url" content="https://raev2.github.io/" />
+        <meta property="og:title" content="Improved Baselines with Representation Autoencoders" />
+        <meta property="og:description" content="RAEv2: an improved baseline for representation autoencoders. >10x faster convergence, SOTA gFID of 1.06 in 80 epochs on ImageNet-256." />
+        <meta property="og:image" content="https://raev2.github.io/assets/fig1a_rfid_gfid.png" />
+        <meta property="og:type" content="article" />
+
+        <!-- Twitter -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Improved Baselines with Representation Autoencoders" />
+        <meta name="twitter:description" content="RAEv2: an improved baseline for representation autoencoders. >10x faster convergence, SOTA gFID of 1.06 in 80 epochs on ImageNet-256." />
+        <meta name="twitter:image" content="https://raev2.github.io/assets/fig1a_rfid_gfid.png" />
+
+        <script src="./static/js/distill_template.v2.js"></script>
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+
+        <script defer="" src="./static/js/hider.js"></script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+
+        <link rel="stylesheet" href="./static/css/paper-layout.css">
+        <link rel="stylesheet" href="./static/css/style.css">
+        <link rel="stylesheet" href="./static/css/custom.css">
+        <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.css" integrity="sha384-yFRtMMDnQtDRO8rLpMIKrtPCD5jdktao2TV19YiZYWMDkUR5GQZR/NOVTdquEx1j" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/katex.min.js" integrity="sha384-9Nhn55MVVN0/4OFx7EE5kpFBPsEMZxKTCnA+4fqDmg12eCTqGi6+BB2LjY8brQxJ" crossorigin="anonymous"></script>
+        <script defer src="https://cdn.jsdelivr.net/npm/katex@0.10.2/dist/contrib/auto-render.min.js" integrity="sha384-kWPLUVMOks5AQFrykwIup5lo0m3iMkkHrD0uJ4H5cjeGihAutqP0yW0J6dpFiVkI" crossorigin="anonymous"
+            onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}, {left: '$', right: '$', display: false}], throwOnError: false});"></script>
+        <script defer src="./static/js/fontawesome.all.min.js"></script>
+
+        <!-- medium zoom -->
+        <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+        <script defer src="./static/js/medium-zoom.min.js"></script>
+        <script defer src="./static/js/zoom.js"></script>
+
+        <style>
+        /* News styling (copied from repa-e template) */
+        .news-section { margin: 2em 0; padding: 1em 0; }
+        .news-item { margin: 16px 0; }
+        .news-item .material-icons { vertical-align: -6px; color: #2563eb; }
+        </style>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    </head>
+    <body>
+
+        <!-- Sticky Table of Contents -->
+        <nav class="toc-container">
+            <h4>Contents</h4>
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+            </ul>
+        </nav>
+
+        <!-- Top navigation bar: back-link on the left, related-work links on the right -->
+        <nav style="background-color: #fff; border-bottom: 1px solid #e5e5e5; padding: 12px 0;">
+            <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #1a1a1a; font-size: 15px; font-weight: 500;">Representation Autoencoders</span>
+                <div style="display: flex; gap: 20px;">
+                    <a href="https://end2end-diffusion.github.io/repa-e/" style="color: #666; text-decoration: none; font-size: 14px;">REPA-E</a>
+                    <a href="https://end2end-diffusion.github.io/irepa/" style="color: #666; text-decoration: none; font-size: 14px;">iREPA</a>
+                    <a href="https://rae-dit.github.io/" style="color: #666; text-decoration: none; font-size: 14px;">RAE</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="header-wrapper">
+            <div class="central-header">
+                <!-- Title -->
+                <div class="title-section">
+                    <h1>Improved Baselines with <em>Representation Autoencoders</em></h1>
+                </div>
+
+                <!-- Authors -->
+                <div class="authors">
+                    <a href="https://1jsingh.github.io/" target="_blank">Jaskirat Singh</a><sup>1,2</sup> &emsp;
+                    <a href="https://bytetriper.github.io/" target="_blank">Boyang Zheng</a><sup>3</sup> &emsp;
+                    <a href="https://www.zongzewu.com/" target="_blank">Zongze Wu</a><sup>1</sup> &emsp;
+                    <a href="https://scholar.google.com/citations?user=LW8ze_UAAAAJ&hl=en" target="_blank">Richard Zhang</a><sup>1</sup> &emsp;
+                    <a href="https://research.adobe.com/person/eli-shechtman/" target="_blank">Eli Shechtman</a><sup>1</sup> &emsp;
+                    <a href="https://www.sainingxie.com/" target="_blank">Saining Xie</a><sup>3</sup>
+                    <div class="affiliations">
+                        <sup>1</sup>Adobe Research &emsp; <sup>2</sup>ANU &emsp; <sup>3</sup>New York University
+                    </div>
+                </div>
+
+                <!-- TL;DR -->
+                <div class="tldr-section">
+                    <p><span class="tldr-label">TL;DR:</span> We simplify and improve Representation Autoencoders. The result: over 10× <strong>faster convergence</strong>, with <strong>better reconstruction</strong>, <strong>better generation</strong>, and better performance on <strong>T2I</strong> and <strong>world models</strong>.</p>
+                </div>
+
+                <!-- Key points + Hero image -->
+                <div class="hero-section">
+                    <div class="key-points">
+                        <div class="key-point">
+                            <div class="key-point-text"><strong>Better generation.</strong> Over 10× faster convergence than prior baselines (800 epochs). RAEv2 achieves state-of-the-art gFID and FDr<sup>6</sup> in just <strong>80 epochs</strong>, with no post-training.</div>
+                        </div>
+                        <div class="key-point">
+                            <div class="key-point-text"><strong>Better reconstruction.</strong> A generalized formulation of RAE improves reconstruction without encoder finetuning or specialized data.</div>
+                        </div>
+                        <div class="key-point">
+                            <div class="key-point-text"><strong>Efficient inference.</strong> When used with RAE, REPA itself can be reused for guidance &mdash; eliminating the need for a secondary weaker diffusion model (AutoGuidance) or an additional forward pass (CFG).</div>
+                        </div>
+
+                        <div class="button-row">
+                            <a href="#" class="button paper-link">
+                                <span class="icon is-small"><i class="ai ai-arxiv"></i></span> arXiv
+                            </a>
+                            <a href="#" class="button">
+                                <span class="icon is-small"><i class="fab fa-github"></i></span> Code
+                            </a>
+                            <a href="#" class="button">
+                                <span class="icon is-small"><img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" alt="HF" style="height: 1em;"></span> Models
+                            </a>
+                        </div>
+                    </div>
+                    <div class="hero-media">
+                        <div style="width: 100%; aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; background: #f5f5f5; border: 2px dashed #cccccc; border-radius: 8px; color: #888; font-size: 0.95em;">
+                            Hero figure placeholder
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <d-article>
+        <!-- Key Findings -->
+        <div class="key-findings">
+            <h4 class="key-findings-title">Key Findings</h4>
+            <div class="key-finding">
+                <span class="key-finding-number">1</span>
+                <p class="key-finding-text"><strong>Pretrained encoders are more than their final layer.</strong> Aggregating the last $K$ encoder layers (simple addition) gives Pareto-optimal reconstruction and generation without any encoder finetuning or specialized training data.</p>
+            </div>
+            <div class="key-finding">
+                <span class="key-finding-number">2</span>
+                <p class="key-finding-text"><strong>RAE and REPA exhibit complementary mechanisms.</strong> RAE captures global semantics; REPA regularizes spatial structure. Using the same representation as both encoder and intermediate target consistently improves generation across 27 encoders &mdash; and lets stronger encoders (DINOv3-L) win on generation too.</p>
+            </div>
+            <div class="key-finding">
+                <span class="key-finding-number">3</span>
+                <p class="key-finding-text"><strong>REPA is x-prediction in RAE latent space.</strong> Re-parameterizing the DiT output as x-prediction lets the lightweight REPA head act as the weak baseline for internal guidance &mdash; no AutoGuidance model, no extra forward pass, halving NFEs at inference.</p>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Overview -->
+        <div id="overview" class="overview-block">
+            <h1 class="text">Overview</h1>
+
+            <div class="sidenote-container">
+                <p class="text">
+                    Representation Autoencoders (<a href="https://rae-dit.github.io/" target="_blank">RAE</a>) replace the traditional VAE in latent diffusion with a <em>pretrained</em> vision encoder (DINOv2, DINOv3, SigLIP, ...) plus a learned decoder. This is a step toward unified tokenization for both understanding and generation. But several practical issues persist: reconstruction lags behind specialized VAEs, RAE is <strong>incompatible with classifier-free guidance</strong> and relies on a separately-trained AutoGuidance model, and the encoder representation itself is underexplored &mdash; prior work always uses the final layer.
+                </p>
+                <aside class="sidenote">All three issues are addressed below by three independent design choices, each of which is <em>training-free</em> on the encoder side.</aside>
+            </div>
+
+            <d-figure id="fig-hero">
+                <figure>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: center;">
+                        <img data-zoomable="" draggable="false" src="assets/fig1a_rfid_gfid.png" alt="Pareto-optimal reconstruction and generation" style="width: 100%;">
+                        <img data-zoomable="" draggable="false" src="assets/fig_raev2_gfid_convergence_cfg.png" alt="RAEv2 training-convergence curve" style="width: 100%;">
+                    </div>
+                    <figcaption>
+                        <strong>Improved Representation Autoencoders.</strong>
+                        <em>Left:</em> RAEv2 exhibits Pareto-optimal reconstruction&ndash;generation at less than half the encoder FLOPs &mdash; no encoder finetuning, no specialized data.
+                        <em>Right:</em> over 10× faster convergence, reaching state-of-the-art gFID of <strong>1.06</strong> in just 80 epochs.
+                    </figcaption>
+                </figure>
+            </d-figure>
+
+            <p class="text">
+                We investigate three design choices for representation autoencoders. Each is independently useful; together they produce <strong>RAEv2</strong>, a recipe with substantially faster convergence, better reconstruction, and simpler guidance.
+            </p>
+
+            <ol class="text">
+                <li><strong><a href="#generalized-rae">Generalized Representation Encoder</a></strong>: define the encoder output as the sum of the last $K$ pretrained-encoder layers, not just the final one.</li>
+                <li><strong><a href="#complementary">RAE + REPA are complementary</a></strong>: use the <em>same</em> representation as both encoder (RAE) and intermediate target (REPA).</li>
+                <li><strong><a href="#free-guidance">REPA as x-prediction</a></strong>: re-parameterize the DiT output so the REPA head itself provides guidance, removing the need for AutoGuidance or a second CFG forward pass.</li>
+            </ol>
+
+        </div>
+
+    </d-article>
+
+    <d-appendix>
+        <h3 id="bibtex">BibTeX</h3>
+        <div class="bibtex-container" style="position: relative;">
+            <button class="copy-btn" id="copy-bibtex-btn" onclick="copyBibtex()" style="position: absolute; top: 8px; right: 8px; background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
+                Copy
+            </button>
+            <pre class="bibtex" id="bibtex-content" style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 0.9em; line-height: 1.6; overflow-x: auto;">@article{singh2026raev2,
+  title  = {Improved Baselines with Representation Autoencoders},
+  author = {Singh, Jaskirat and Zheng, Boyang and Wu, Zongze and Zhang, Richard and Shechtman, Eli and Xie, Saining},
+  year   = {2026},
+}</pre>
+        </div>
+
+        <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #888; text-align: center;">
+            <p>We thank the <a href="https://rae-dit.github.io/" target="_blank">RAE</a>, <a href="https://end2end-diffusion.github.io/repa-e/" target="_blank">REPA-E</a>, and <a href="https://end2end-diffusion.github.io/irepa/" target="_blank">iREPA</a> projects for inspiration. Page template adapted from End2End Diffusion.</p>
+        </footer>
+    </d-appendix>
+
+<!-- BibTeX copy -->
+<script>
+function copyBibtex() {
+    const bibtexContent = document.getElementById('bibtex-content').innerText;
+    const btn = document.getElementById('copy-bibtex-btn');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(bibtexContent).then(function() {
+            btn.innerText = 'Copied!';
+            setTimeout(function() { btn.innerText = 'Copy'; }, 2000);
+        }).catch(function() { fallbackCopy(bibtexContent, btn); });
+    } else { fallbackCopy(bibtexContent, btn); }
+}
+function fallbackCopy(text, btn) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); btn.innerText = 'Copied!'; setTimeout(function() { btn.innerText = 'Copy'; }, 2000); }
+    catch (e) { btn.innerText = 'Failed'; setTimeout(function() { btn.innerText = 'Copy'; }, 2000); }
+    document.body.removeChild(ta);
+}
+</script>
+
+<!-- TOC scroll highlighting -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tocContainer = document.querySelector('.toc-container');
+    const tocLinks = document.querySelectorAll('.toc-container a');
+    const sections = ['overview'];
+
+    function updateTOC() {
+        const scrollPos = window.scrollY;
+        const header = document.querySelector('.header-wrapper');
+        const headerBottom = header ? header.offsetTop + header.offsetHeight : 0;
+
+        if (scrollPos > headerBottom - 100) tocContainer.classList.add('visible');
+        else tocContainer.classList.remove('visible');
+
+        let current = '';
+        const scrollPosForActive = scrollPos + 150;
+        sections.forEach(id => {
+            const section = document.getElementById(id);
+            if (section && scrollPosForActive >= section.offsetTop) current = id;
+        });
+        tocLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === '#' + current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateTOC);
+    updateTOC();
+});
+</script>
+
+<script>
+// Match hero image height to key-points column
+function adjustHeroImageHeight() {
+    const keyPoints = document.querySelector('.central-header .key-points');
+    const heroImg = document.querySelector('.central-header .hero-media img');
+    if (keyPoints && heroImg) {
+        const keyPointsHeight = keyPoints.offsetHeight;
+        if (heroImg.naturalHeight > keyPointsHeight) heroImg.style.maxHeight = keyPointsHeight + 'px';
+        else heroImg.style.maxHeight = '';
+    }
+}
+window.addEventListener('load', adjustHeroImageHeight);
+window.addEventListener('resize', adjustHeroImageHeight);
+</script>
+
+</body>
+</html>
