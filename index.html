@@ -93,6 +93,18 @@
         .news-section { margin: 2em 0; padding: 1em 0; }
         .news-item { margin: 16px 0; }
         .news-item .material-icons { vertical-align: -6px; color: #2563eb; }
+
+        /* Nested TOC subitems */
+        @media (min-width: 1200px) {
+            .toc-container ul ul {
+                margin-left: 12px;
+                margin-top: 6px;
+                font-size: 0.92em;
+            }
+            .toc-container ul ul li {
+                margin-bottom: 6px;
+            }
+        }
         </style>
         <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     </head>
@@ -102,7 +114,31 @@
         <nav class="toc-container">
             <h4>Contents</h4>
             <ul>
-                <li><a href="#overview">Overview</a></li>
+                <li><a href="#overview">1. Overview</a></li>
+                <li>
+                    <a href="#method">2. Method</a>
+                    <ul>
+                        <li><a href="#method-generalized-rae">2.1 Generalized RAE</a></li>
+                        <li><a href="#method-complementary">2.2 RAE and REPA are Complementary</a></li>
+                        <li><a href="#method-self-guidance">2.3 REPA for Self-Guidance</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#results">3. Results</a>
+                    <ul>
+                        <li><a href="#results-ablations">3.1 Ablations</a></li>
+                        <li><a href="#results-convergence">3.2 Faster Convergence</a></li>
+                        <li><a href="#results-reconstruction">3.3 Better Reconstruction</a></li>
+                    </ul>
+                </li>
+                <li>
+                    <a href="#generalization">4. Generalization to Other Tasks</a>
+                    <ul>
+                        <li><a href="#generalization-t2i">4.1 T2I Generation</a></li>
+                        <li><a href="#generalization-wm">4.2 World Models</a></li>
+                    </ul>
+                </li>
+                <li><a href="#conclusion">5. Conclusion</a></li>
             </ul>
         </nav>
 
@@ -111,9 +147,9 @@
             <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center;">
                 <span style="color: #1a1a1a; font-size: 15px; font-weight: 500;">Representation Autoencoders</span>
                 <div style="display: flex; gap: 20px;">
+                    <a href="https://rae-dit.github.io/" style="color: #666; text-decoration: none; font-size: 14px;">RAE</a>
                     <a href="https://end2end-diffusion.github.io/repa-e/" style="color: #666; text-decoration: none; font-size: 14px;">REPA-E</a>
                     <a href="https://end2end-diffusion.github.io/irepa/" style="color: #666; text-decoration: none; font-size: 14px;">iREPA</a>
-                    <a href="https://rae-dit.github.io/" style="color: #666; text-decoration: none; font-size: 14px;">RAE</a>
                 </div>
             </div>
         </nav>
@@ -148,7 +184,7 @@
                     <div class="key-points">
                         <div class="key-point">
                             <img class="key-point-icon" src="./static/img/icons/quality.svg" alt="Generation Icon">
-                            <div class="key-point-text"><strong>Better generation.</strong> Over 10× faster convergence than prior baselines (800 epochs). RAEv2 achieves state-of-the-art gFID and FDr<sup>6</sup> in just <strong>80 epochs</strong>, with no post-training.</div>
+                            <div class="key-point-text"><strong>Better generation.</strong> Over 10× faster convergence. Compared to prior baselines (800 epochs), RAEv2 achieves state-of-the-art gFID and FDr<sup>6</sup> in just <strong>80 epochs</strong> with no post-training.</div>
                         </div>
                         <div class="key-point">
                             <img class="key-point-icon" src="./static/img/icons/latent.svg" alt="Reconstruction Icon">
@@ -156,7 +192,7 @@
                         </div>
                         <div class="key-point">
                             <img class="key-point-icon" src="./static/img/icons/speed.svg" alt="Efficiency Icon">
-                            <div class="key-point-text"><strong>Efficient inference.</strong> When used with RAE, REPA itself can be reused for guidance. This eliminates the need for a secondary weaker diffusion model (AutoGuidance) or an additional forward pass (CFG).</div>
+                            <div class="key-point-text"><strong>Efficient inference.</strong> When used with RAE, REPA itself can be reused for guidance. This eliminates the need for training a second weaker diffusion model (AutoGuidance) or an additional forward pass (CFG).</div>
                         </div>
 
                         <div class="button-row">
@@ -181,20 +217,20 @@
         </div>
 
     <d-article>
-        <!-- Key Findings -->
+        <!-- Key Findings (from the paper) -->
         <div class="key-findings">
             <h4 class="key-findings-title">Key Findings</h4>
             <div class="key-finding">
                 <span class="key-finding-number">1</span>
-                <p class="key-finding-text"><strong>Pretrained encoders are more than their final layer.</strong> Aggregating the last $K$ encoder layers (simple addition) gives Pareto-optimal reconstruction and generation without any encoder finetuning or specialized training data.</p>
+                <p class="key-finding-text"><strong>Generalized Representation Encoders.</strong> Pretrained vision encoders are more than their final layer. Aggregating features across layers of a pretrained vision encoder greatly improves reconstruction without encoder finetuning or specialized data (e.g., text, faces).</p>
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">2</span>
-                <p class="key-finding-text"><strong>RAE and REPA exhibit complementary mechanisms.</strong> RAE captures global semantics; REPA regularizes spatial structure. Using the same representation as both encoder and intermediate target consistently improves generation across 27 encoders. This also lets stronger encoders (DINOv3-L) win on generation.</p>
+                <p class="key-finding-text"><strong>RAE and REPA exhibit complementary working mechanisms.</strong> RAE leverages semantic quality while REPA regularizes spatial structure. This complementary nature allows using the same pretrained representation as both encoder (RAE) and target for intermediate diffusion features (REPA). This also explains why stronger representations like DINOv3-L, which excel in both metrics, achieve the best generation with RAEv2.</p>
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">3</span>
-                <p class="key-finding-text"><strong>REPA is x-prediction in RAE latent space.</strong> Re-parameterizing the DiT output as x-prediction lets the lightweight REPA head act as the weak baseline for internal guidance. This removes the AutoGuidance model and the extra forward pass, halving NFEs at inference.</p>
+                <p class="key-finding-text"><strong>REPA enables self-guidance.</strong> REPA is x-prediction in RAE latent space. By reformulating the output head also as x-prediction, the REPA head itself can be used for internal guidance. This eliminates the need for a separate model (AutoGuidance) or extra forward pass (CFG).</p>
             </div>
         </div>
 
@@ -235,6 +271,75 @@
                 <li><strong><a href="#free-guidance">REPA as x-prediction</a></strong>: re-parameterize the DiT output so the REPA head itself provides guidance, removing the need for AutoGuidance or a second CFG forward pass.</li>
             </ol>
 
+        </div>
+
+        <hr>
+
+        <!-- Method -->
+        <div id="method" class="results-block">
+            <h1 class="text">2. Method</h1>
+
+            <div id="method-generalized-rae" style="margin-top: 1.5em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">2.1 Generalized Representation Encoder</h2>
+                <!-- TODO -->
+            </div>
+
+            <div id="method-complementary" style="margin-top: 2em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">2.2 RAE and REPA are Complementary</h2>
+                <!-- TODO -->
+            </div>
+
+            <div id="method-self-guidance" style="margin-top: 2em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">2.3 REPA for Self-Guidance</h2>
+                <!-- TODO -->
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Results -->
+        <div id="results" class="results-block">
+            <h1 class="text">3. Results</h1>
+
+            <div id="results-ablations" style="margin-top: 1.5em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.1 Ablations</h2>
+                <!-- TODO -->
+            </div>
+
+            <div id="results-convergence" style="margin-top: 2em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.2 Faster Convergence</h2>
+                <!-- TODO -->
+            </div>
+
+            <div id="results-reconstruction" style="margin-top: 2em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.3 Better Reconstruction</h2>
+                <!-- TODO -->
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Generalization -->
+        <div id="generalization" class="results-block">
+            <h1 class="text">4. Generalization to Other Tasks</h1>
+
+            <div id="generalization-t2i" style="margin-top: 1.5em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">4.1 T2I Generation</h2>
+                <!-- TODO -->
+            </div>
+
+            <div id="generalization-wm" style="margin-top: 2em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">4.2 World Models</h2>
+                <!-- TODO -->
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Conclusion -->
+        <div id="conclusion" class="conclusion-block">
+            <h1 class="text">5. Conclusion</h1>
+            <!-- TODO -->
         </div>
 
     </d-article>
@@ -284,7 +389,7 @@ function fallbackCopy(text, btn) {
 document.addEventListener('DOMContentLoaded', function() {
     const tocContainer = document.querySelector('.toc-container');
     const tocLinks = document.querySelectorAll('.toc-container a');
-    const sections = ['overview'];
+    const sections = ['overview', 'method', 'method-generalized-rae', 'method-complementary', 'method-self-guidance', 'results', 'results-ablations', 'results-convergence', 'results-reconstruction', 'generalization', 'generalization-t2i', 'generalization-wm', 'conclusion'];
 
     function updateTOC() {
         const scrollPos = window.scrollY;
