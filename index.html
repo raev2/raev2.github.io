@@ -94,6 +94,21 @@
         .news-item { margin: 16px 0; }
         .news-item .material-icons { vertical-align: -6px; color: #2563eb; }
 
+        /* Suggestion box (mirrors finding-box but in teal) */
+        .suggestion-box {
+            background: #f0fafa;
+            border-left: 4px solid #14b8a6;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 16px 0;
+        }
+        .suggestion-box p { margin: 0; font-size: 0.95em; color: #1f3a3a; }
+        .suggestion-label {
+            font-weight: 700;
+            color: #0f766e;
+            margin-right: 6px;
+        }
+
         /* Nested TOC subitems */
         @media (min-width: 1200px) {
             .toc-container ul ul {
@@ -126,9 +141,8 @@
                 <li>
                     <a href="#results">3. Results</a>
                     <ul>
-                        <li><a href="#results-ablations">3.1 Ablations</a></li>
-                        <li><a href="#results-convergence">3.2 Faster Convergence</a></li>
-                        <li><a href="#results-reconstruction">3.3 Better Reconstruction</a></li>
+                        <li><a href="#results-convergence">3.1 Faster Convergence</a></li>
+                        <li><a href="#results-efficiency">3.2 Training Efficiency</a></li>
                     </ul>
                 </li>
                 <li>
@@ -176,7 +190,7 @@
 
                 <!-- TL;DR -->
                 <div class="tldr-section">
-                    <p><span class="tldr-label">TL;DR:</span> We simplify and improve Representation Autoencoders. The result: over 10× <strong>faster convergence</strong>, with <strong>better reconstruction</strong>, <strong>better generation</strong>, and better performance on <strong>T2I</strong> and <strong>world models</strong>.</p>
+                    <p><span class="tldr-label">TL;DR:</span> We simplify and improve Representation Autoencoders. Introducing <strong>RAEv2</strong>: over 10× <strong>faster convergence</strong>, <strong>better reconstruction</strong>, <strong>better generation</strong>, and better on <strong>T2I</strong> and <strong>world models</strong>.</p>
                 </div>
 
                 <!-- Key points + Hero image -->
@@ -199,10 +213,10 @@
                             <a href="#" class="button paper-link">
                                 <span class="icon is-small"><i class="ai ai-arxiv"></i></span> arXiv
                             </a>
-                            <a href="#" class="button">
+                            <a href="https://github.com/nanovisionx/RAEv2" class="button" target="_blank">
                                 <span class="icon is-small"><i class="fab fa-github"></i></span> Code
                             </a>
-                            <a href="#" class="button">
+                            <a href="https://huggingface.co/collections/nanovisionx/raev2" class="button" target="_blank">
                                 <span class="icon is-small"><img src="https://huggingface.co/front/assets/huggingface_logo-noborder.svg" alt="HF" style="height: 1em;"></span> Models
                             </a>
                         </div>
@@ -238,12 +252,24 @@
         <div id="overview" class="overview-block">
             <h1 class="text">Overview</h1>
 
+            <p class="text">
+                Representation Autoencoders (<a href="https://rae-dit.github.io/" target="_blank">RAE</a>)<sup><a href="#ref-rae">[1]</a></sup> replace the traditional VAE with pretrained vision encoders (DINOv2<sup><a href="#ref-dinov2">[8]</a></sup>, DINOv3<sup><a href="#ref-dinov3">[9]</a></sup>, SigLIP, ...). This provides an elegant solution for unified tokenization across understanding and generation.
+            </p>
+
             <div class="sidenote-container">
-                <p class="text">
-                    Representation Autoencoders (<a href="https://rae-dit.github.io/" target="_blank">RAE</a>) replace the traditional VAE in latent diffusion with a <em>pretrained</em> vision encoder (DINOv2, DINOv3, SigLIP, ...) plus a learned decoder. This is a step toward unified tokenization for both understanding and generation. But several practical issues persist: reconstruction lags behind specialized VAEs, RAE is <strong>incompatible with classifier-free guidance</strong> and relies on a separately-trained AutoGuidance model, and the encoder representation itself is underexplored. Prior work always uses the final layer.
+                <p class="text" style="margin-bottom: 0.4em;">
+                    We make representation autoencoders simpler and better:
                 </p>
-                <aside class="sidenote">All three issues are addressed below by three independent design choices, each of which is <em>training-free</em> on the encoder side.</aside>
+                <ul class="text" style="margin-top: 0;">
+                    <li>Better reconstruction</li>
+                    <li>Better generation</li>
+                    <li>Over 10× faster training efficiency</li>
+                    <li>Better performance on T2I and world models</li>
+                </ul>
+                <aside class="sidenote">On our setup, training on ImageNet takes just <strong>10&ndash;12 hours</strong>. No more 800-epoch runs that took weeks just months ago.</aside>
             </div>
+
+            <p class="text" style="color: #2563eb; font-weight: 700; font-size: 1.15em; margin-top: 1.2em; margin-bottom: 0.6em;">Introducing RAEv2.</p>
 
             <d-figure id="fig-hero">
                 <figure>
@@ -285,15 +311,15 @@
             </div>
 
             <div class="icon-row">
-                <a href="#results" class="icon-link">
+                <a href="#results-convergence" class="icon-link">
                     <img src="./static/img/icons/quality.svg" alt="Better Generation" class="icon">
                     Better<br>Generation
                 </a>
-                <a href="#results-convergence" class="icon-link">
+                <a href="#results-efficiency" class="icon-link">
                     <img src="./static/img/icons/speed.svg" alt="Training Efficiency" class="icon">
                     Training<br>Efficiency
                 </a>
-                <a href="#results-reconstruction" class="icon-link">
+                <a href="#method-generalized-rae" class="icon-link">
                     <img src="./static/img/icons/reconstruction.svg" alt="Better Reconstruction" class="icon">
                     Better<br>Reconstruction
                 </a>
@@ -326,13 +352,78 @@
                     </figure>
                 </d-figure>
 
-                <p class="text">
-                    We consider a simple solution. We define a generalized formulation where the RAE output is the <strong>sum of the last $K$ encoder layers</strong>. The original RAE is recovered at $K{=}1$. By simply varying $K$, we get easy control over reconstruction quality while also <em>improving</em> generation performance and <em>preserving</em> understanding performance. See <a href="#results-ablations">Section 3.1</a> for the full $K$ sweep.
-                </p>
+                <div class="sidenote-container">
+                    <p class="text">
+                        We consider a simple solution. We define a generalized formulation where the RAE output is the <strong>sum of the last $K$ encoder layers</strong>. The original RAE is recovered at $K{=}1$. By simply varying $K$, we get easy control over reconstruction quality while also <em>improving</em> generation performance and <em>preserving</em> understanding performance. See <a href="#results-ablations">Section 3.1</a> for the full $K$ sweep.
+                    </p>
+                    <aside class="sidenote">In high-dimensional spaces, addition preserves the geometric structure of the underlying subspaces.</aside>
+                </div>
 
                 <div class="finding-box">
                     <ul>
                         <li><strong>Finding 1: Generalized Representation Encoders.</strong> Pretrained vision encoders are more than their final layer. Simply aggregating features across layers of a pretrained vision encoder greatly improves reconstruction without encoder finetuning or specialized data (e.g., text, faces).</li>
+                    </ul>
+                </div>
+
+                <h3 class="text" style="font-size: 1.15em; margin-top: 1.5em; margin-bottom: 0.4em;">Varying $K$ improves both reconstruction and generation</h3>
+
+                <d-figure id="fig-k-sweep">
+                    <figure>
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+                            <div style="text-align: center;">
+                                <img data-zoomable="" draggable="false" src="assets/fig_k_sweep_gfid_noguide.png" alt="gFID no guidance" style="width: 100%;">
+                                <div style="font-size: 0.82em; color: #555; margin-top: 4px;">(a) gFID ↓ (no guidance)</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <img data-zoomable="" draggable="false" src="assets/fig_k_sweep_gfid_guide.png" alt="gFID with guidance" style="width: 100%;">
+                                <div style="font-size: 0.82em; color: #555; margin-top: 4px;">(b) gFID ↓ (with guidance)</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <img data-zoomable="" draggable="false" src="assets/fig_k_sweep_rfid.png" alt="rFID" style="width: 100%;">
+                                <div style="font-size: 0.82em; color: #555; margin-top: 4px;">(c) rFID ↓</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <img data-zoomable="" draggable="false" src="assets/fig_k_sweep_psnr.png" alt="PSNR" style="width: 100%;">
+                                <div style="font-size: 0.82em; color: #555; margin-top: 4px;">(d) PSNR ↑</div>
+                            </div>
+                        </div>
+                        <figcaption>
+                            <strong>Ablation on choice of $K$ for generalized RAE.</strong> Reconstruction (rFID, PSNR) improves monotonically with $K$. Generation is best at small $K$ unguided, and at $K{=}7$ with guidance (gFID <strong>1.06</strong>). DINOv3-L (24 layers), DiT$^{DH}$-XL, 80 epochs.
+                        </figcaption>
+                    </figure>
+                </d-figure>
+
+                <h3 class="text" style="font-size: 1.15em; margin-top: 1.5em; margin-bottom: 0.4em;">Pareto-optimal reconstruction-generation</h3>
+
+                <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 18px; align-items: center;">
+                    <d-figure id="fig-rfid-gfid-20ep" style="margin: 0;">
+                        <figure style="margin: 0;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_rfid_gfid_20ep.png" alt="Reconstruction-generation trade-off" style="width: 100%;">
+                            <figcaption><strong>Reconstruction-generation trade-off.</strong> RAEv2 sits on the Pareto frontier.</figcaption>
+                        </figure>
+                    </d-figure>
+                    <div>
+                        <table class="data-table" style="width: 100%; font-size: 0.88em;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left;">$K$</th>
+                                    <th style="text-align: center;">LP top-1 (%) ↑</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>1 (last layer; RAE)</td><td style="text-align:center;">85.39</td></tr>
+                                <tr><td>4</td><td style="text-align:center;">85.15</td></tr>
+                                <tr><td>7</td><td style="text-align:center;">85.10</td></tr>
+                                <tr><td>23 (full MLS)</td><td style="text-align:center;">85.24</td></tr>
+                            </tbody>
+                        </table>
+                        <div style="font-size: 0.82em; color: #555; margin-top: 6px; text-align: center;">Linear probing on ImageNet across $K$ (DINOv3-L). Understanding is preserved.</div>
+                    </div>
+                </div>
+
+                <div class="finding-box">
+                    <ul>
+                        <li><strong>Finding 2.</strong> The generalized formulation of RAE improves reconstruction and guided generation while preserving global semantics of the representation space. This enables its use for a unified tokenization for both understanding and generation.</li>
                     </ul>
                 </div>
             </div>
@@ -341,12 +432,21 @@
                 <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">2.2 RAE and REPA Exhibit Complementary Mechanisms</h2>
 
                 <p class="text">
-                    The prevailing assumption is that RAE eliminates the need for REPA, since RAE already uses the encoder representation as the latent space. Distilling the same representation again to intermediate diffusion layers looks like a wasteful skip connection. We test this assumption at scale across 27 vision encoders and find the opposite: using REPA on top of RAE consistently improves generation. This suggests fundamentally different working mechanisms.
+                    The prevailing assumption<sup><a href="#ref-rae">[1]</a><a href="#ref-riprepa">[15]</a><a href="#ref-dinosae">[16]</a></sup> is that RAE eliminates the need for REPA<sup><a href="#ref-repa">[2]</a></sup>, since RAE already uses the encoder representation as the latent space. Distilling the same representation again to intermediate diffusion layers looks like a wasteful skip connection. We test this assumption at scale across 27 vision encoders and find the opposite: using REPA on top of RAE consistently improves generation. This suggests fundamentally different working mechanisms.
                 </p>
+
+                <d-figure id="fig-encoder-var">
+                    <figure>
+                        <img data-zoomable="" draggable="false" src="assets/fig_encoder_var.png" alt="RAE does not eliminate need for REPA">
+                        <figcaption>
+                            <strong>RAE does not eliminate the need for REPA.</strong> Across all 27 pretrained representations, adding REPA on top of RAE consistently improves generation, contrary to the wasteful-skip-connection hypothesis.
+                        </figcaption>
+                    </figure>
+                </d-figure>
 
                 <h3 class="text" style="font-size: 1.15em; margin-top: 1.5em; margin-bottom: 0.4em;">Working mechanism</h3>
                 <p class="text">
-                    REPA on top of RAE has minimal impact on the <em>peak global semantic information</em> (linear probing) of intermediate diffusion features. It instead substantially improves their <em>spatial self-similarity structure</em>. This effect was identified in <a href="https://end2end-diffusion.github.io/irepa/" target="_blank">iREPA</a>.
+                    REPA<sup><a href="#ref-repa">[2]</a></sup> on top of RAE has minimal impact on the <em>peak global semantic information</em> (linear probing) of intermediate diffusion features. It instead substantially improves their <em>spatial self-similarity structure</em>. This effect was identified in <a href="https://end2end-diffusion.github.io/irepa/" target="_blank">iREPA</a><sup><a href="#ref-irepa">[3]</a></sup>.
                 </p>
 
                 <d-figure id="fig-working-mechanism">
@@ -368,34 +468,40 @@
 
                 <d-figure id="fig-corr-plots">
                     <figure>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
-                            <img data-zoomable="" draggable="false" src="assets/fig_corr_repa.png" alt="Correlation for REPA alone" style="width: 100%;">
-                            <img data-zoomable="" draggable="false" src="assets/fig_corr_rae.png" alt="Correlation for RAE alone" style="width: 100%;">
-                            <img data-zoomable="" draggable="false" src="assets/fig_corr_rae_repa.png" alt="Correlation for RAE + REPA" style="width: 100%;">
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: center;">
+                            <div style="text-align: center;">
+                                <img data-zoomable="" draggable="false" src="assets/fig_corr_repa.png" alt="Correlation for REPA alone" style="width: 100%;">
+                                <div style="font-size: 0.85em; color: #555; margin-top: 4px;">(a) REPA alone</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <img data-zoomable="" draggable="false" src="assets/fig_corr_rae.png" alt="Correlation for RAE alone" style="width: 100%;">
+                                <div style="font-size: 0.85em; color: #555; margin-top: 4px;">(b) RAE alone</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <img data-zoomable="" draggable="false" src="assets/fig_corr_rae_repa.png" alt="Correlation for RAE + REPA" style="width: 100%;">
+                                <div style="font-size: 0.85em; color: #555; margin-top: 4px;">(c) RAE + REPA</div>
+                            </div>
+                            <div>
+                                <table class="data-table" style="width: 100%; font-size: 0.9em;">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: left;">Method</th>
+                                            <th style="text-align: center;">LP ($r$) ↓</th>
+                                            <th style="text-align: center;">LDS ($r$) ↓</th>
+                                            <th style="text-align: center;">Avg ($r$) ↓</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr><td>REPA alone</td><td style="text-align:center;">+0.34</td><td style="text-align:center;"><strong>&minus;0.89</strong></td><td style="text-align:center;">&minus;0.56</td></tr>
+                                        <tr><td>RAE alone</td> <td style="text-align:center;"><strong>&minus;0.81</strong></td><td style="text-align:center;">&minus;0.13</td><td style="text-align:center;">&minus;0.55</td></tr>
+                                        <tr style="background-color: #f5f5f5;"><td><strong>RAE + REPA</strong></td><td style="text-align:center;">&minus;0.64</td><td style="text-align:center;">&minus;0.53</td><td style="text-align:center;"><strong>&minus;0.83</strong></td></tr>
+                                    </tbody>
+                                </table>
+                                <div style="font-size: 0.85em; color: #555; margin-top: 6px; text-align: center;">(d) Pearson $r$ with gFID across 27 encoders</div>
+                            </div>
                         </div>
                     </figure>
                 </d-figure>
-
-                <div class="table-container" style="margin: 18px auto 4px; max-width: 520px;">
-                    <table class="data-table" style="width: 100%; font-size: 0.9em;">
-                        <thead>
-                            <tr>
-                                <th style="text-align: left;">Method</th>
-                                <th style="text-align: center;">LP ($r$) ↓</th>
-                                <th style="text-align: center;">LDS ($r$) ↓</th>
-                                <th style="text-align: center;">Avg ($r$) ↓</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>REPA alone</td><td style="text-align:center;">+0.34</td><td style="text-align:center;"><strong>&minus;0.89</strong></td><td style="text-align:center;">&minus;0.56</td></tr>
-                            <tr><td>RAE alone</td> <td style="text-align:center;"><strong>&minus;0.81</strong></td><td style="text-align:center;">&minus;0.13</td><td style="text-align:center;">&minus;0.55</td></tr>
-                            <tr style="background-color: #f5f5f5;"><td><strong>RAE + REPA</strong></td><td style="text-align:center;">&minus;0.64</td><td style="text-align:center;">&minus;0.53</td><td style="text-align:center;"><strong>&minus;0.83</strong></td></tr>
-                        </tbody>
-                    </table>
-                </div>
-                <p class="text" style="font-size: 0.9em; color: #555; margin-top: 4px; text-align: center;">
-                    Pearson correlation $r$ with gFID across 27 vision encoders.
-                </p>
 
                 <p class="text" style="margin-top: 1em;">
                     REPA alone correlates most with spatial structure (LDS). RAE alone benefits most from global semantics (LP). Together, RAE+REPA benefit from encoders strong in <em>both</em>. This is why stronger encoders like DINOv3-L, which excel on both axes, yield the best generation with RAEv2.
@@ -403,7 +509,7 @@
 
                 <div class="finding-box">
                     <ul>
-                        <li><strong>Finding 2: RAE and REPA exhibit complementary working mechanisms.</strong> RAE leverages semantic quality while REPA regularizes spatial structure. This complementary nature allows using same pretrained representation as both encoder (RAE) and target for intermediate diffusion features (REPA). This also explains why stronger representations like DINOv3-L, which excel in both global and spatial performance, achieve the best generation with RAEv2.</li>
+                        <li><strong>Finding 3: RAE and REPA exhibit complementary working mechanisms.</strong> RAE leverages semantic quality while REPA regularizes spatial structure. This complementary nature allows using same pretrained representation as both encoder (RAE) and target for intermediate diffusion features (REPA). This also explains why stronger representations like DINOv3-L, which excel in both global and spatial performance, achieve the best generation with RAEv2.</li>
                     </ul>
                 </div>
             </div>
@@ -412,15 +518,15 @@
                 <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">2.3 REPA for Self-Guidance</h2>
 
                 <p class="text">
-                    <strong>RAE struggles with traditional CFG.</strong> Instead, the original RAE relies on AutoGuidance, which requires training a separate, weaker diffusion model as the guidance baseline. This adds compute and complexity.
+                    <strong>RAE struggles with traditional CFG</strong><sup><a href="#ref-cfg">[4]</a></sup> and instead relies on AutoGuidance<sup><a href="#ref-ag">[5]</a></sup>: a separately-trained weaker diffusion model. We show this is unnecessary.
                 </p>
 
                 <p class="text">
-                    <strong>REPA is x-prediction in RAE latent space.</strong> In RAE, the clean latent <em>is</em> the encoder representation, $\mathbf{x} = E(\mathbf{I})$. The REPA projection head $h_\phi$ maps early-layer intermediate features $\mathbf{h}$ to predict the clean latent $\hat{\mathbf{x}}_{\text{repa}} = h_\phi(\mathbf{h})$. This is exactly x-prediction in the RAE latent space. Because $h_\phi$ is a lightweight MLP that only sees early-layer features, its prediction is naturally weaker than the full model's, playing the same role as the smaller AutoGuidance model.
+                    <strong>REPA is x-prediction<sup><a href="#ref-jit">[6]</a></sup> in RAE latent space.</strong> In RAE, the clean latent <em>is</em> the encoder representation: $\mathbf{x} = E(\mathbf{I})$. The REPA head $h_\phi$ predicts $\hat{\mathbf{x}}_{\text{repa}} = h_\phi(\mathbf{h})$ from early-layer features $\mathbf{h}$. Since $h_\phi$ is a lightweight MLP on early features, its prediction is naturally weaker than the full model's, the same role as the AutoGuidance model.
                 </p>
 
                 <p class="text">
-                    If we reformulate the full DiT output also as x-prediction (rather than velocity), both outputs live in the same space. We can then apply internal guidance directly within a single forward pass:
+                    Reformulating the full DiT output also as x-prediction puts both outputs in the same space, enabling internal guidance<sup><a href="#ref-internalguidance">[7]</a></sup> in a single forward pass:
                 </p>
 
                 <p class="text" style="text-align: center;">
@@ -428,12 +534,33 @@
                 </p>
 
                 <p class="text">
-                    The REPA head runs <em>in the same forward pass</em> as the main model. Compared to AutoGuidance this removes the secondary model entirely. Compared to CFG it removes the extra unconditional pass, halving the NFEs at inference.
+                    No AutoGuidance model. No extra forward pass. Halves the NFEs versus CFG.
+                </p>
+
+                <div class="table-container" style="margin: 18px auto 4px; max-width: 560px;">
+                    <table class="data-table" style="width: 100%; font-size: 0.9em;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Guidance</th>
+                                <th style="text-align: center;">gFID ($K{=}7$) ↓</th>
+                                <th style="text-align: center;">gFID ($K{=}23$) ↓</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>w/o Guidance</td>      <td style="text-align:center;">1.65</td><td style="text-align:center;">3.01</td></tr>
+                            <tr><td>CFG</td>               <td style="text-align:center;">1.49</td><td style="text-align:center;">2.83</td></tr>
+                            <tr><td>AutoGuidance (AG)</td> <td style="text-align:center;">1.14</td><td style="text-align:center;">1.37</td></tr>
+                            <tr style="background-color: #f5f5f5;"><td><strong>REPA Guidance (ours)</strong></td><td style="text-align:center;"><strong>1.06</strong></td><td style="text-align:center;"><strong>1.25</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text" style="font-size: 0.88em; color: #555; margin-top: 4px; text-align: center;">
+                    <strong>Ablation on guidance mechanism in RAEv2.</strong> Guidance with REPA and x-prediction achieves the best results at no extra inference cost.
                 </p>
 
                 <div class="finding-box">
                     <ul>
-                        <li><strong>Finding 3: REPA enables self-guidance.</strong> REPA is x-prediction in RAE latent space. By reformulating the output head also as x-prediction, the REPA head itself can be used for internal guidance. This eliminates the need for a separate model (AutoGuidance) or extra forward pass (CFG).</li>
+                        <li><strong>Finding 4: REPA enables self-guidance.</strong> REPA is x-prediction in RAE latent space. By reformulating the output head also as x-prediction, the REPA head itself can be used for internal guidance. This eliminates the need for a separate model (AutoGuidance) or extra forward pass (CFG).</li>
                     </ul>
                 </div>
             </div>
@@ -445,19 +572,96 @@
         <div id="results" class="results-block">
             <h1 class="text">3. Results</h1>
 
-            <div id="results-ablations" style="margin-top: 1.5em;">
-                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.1 Ablations</h2>
-                <!-- TODO -->
+            <div id="results-convergence" style="margin-top: 1.5em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.1 Faster Convergence</h2>
+
+                <p class="text">
+                    Across various vision encoders, RAEv2 converges substantially faster than the original RAE.
+                </p>
+
+                <d-figure id="fig-convergence-grid">
+                    <figure>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_convergence_exp_dinov2b-fixed.png" alt="Convergence DINOv2-B" style="width: 100%;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_convergence_exp_dinov3b-fixed.png" alt="Convergence DINOv3-B" style="width: 100%;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_convergence_exp_dinov3l-fixed.png" alt="Convergence DINOv3-L" style="width: 100%;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_convergence_exp_eupeb-fixed.png" alt="Convergence EUPE-B" style="width: 100%;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_convergence_exp_webssl1b-fixed.png" alt="Convergence WebSSL-1B" style="width: 100%;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_convergence_exp_spatialpeb-fixed.png" alt="Convergence SpatialPE-B" style="width: 100%;">
+                        </div>
+                        <figcaption>
+                            <strong>Convergence comparison with original RAE.</strong> Across DINOv2-B, DINOv3-B/L, EUPE-B, WebSSL-1B, and SpatialPE-B, the improved training recipe (RAEv2) consistently leads to faster convergence. DiT$^{DH}$-XL, $K{=}1$ for RAEv2, batch size 1024.
+                        </figcaption>
+                    </figure>
+                </d-figure>
             </div>
 
-            <div id="results-convergence" style="margin-top: 2em;">
-                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.2 Faster Convergence</h2>
-                <!-- TODO -->
-            </div>
+            <div id="results-efficiency" style="margin-top: 2.5em;">
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.2 Training Efficiency</h2>
 
-            <div id="results-reconstruction" style="margin-top: 2em;">
-                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">3.3 Better Reconstruction</h2>
-                <!-- TODO -->
+                <div class="table-container" style="margin: 14px 0;">
+                    <table class="data-table" style="width: 100%; font-size: 0.9em;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Method</th>
+                                <th style="text-align: center;">Epochs</th>
+                                <th style="text-align: center;">E@FID-2 ↓</th>
+                                <th style="text-align: center;">gFID ↓</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>SiT-XL/2</td>      <td style="text-align:center;">800</td><td style="text-align:center;">&gt;800</td><td style="text-align:center;">2.12</td></tr>
+                            <tr><td>DDT-XL</td>        <td style="text-align:center;">800</td><td style="text-align:center;">&ndash;</td>   <td style="text-align:center;">1.26</td></tr>
+                            <tr><td>SiT-XL/2-REPA</td> <td style="text-align:center;">800</td><td style="text-align:center;">&gt;800</td><td style="text-align:center;">1.42</td></tr>
+                            <tr><td>LightningDiT</td>  <td style="text-align:center;">800</td><td style="text-align:center;">&gt;800</td><td style="text-align:center;">1.42</td></tr>
+                            <tr><td>REG</td>           <td style="text-align:center;">800</td><td style="text-align:center;">560</td>     <td style="text-align:center;">1.54</td></tr>
+                            <tr><td>REPA-E</td>        <td style="text-align:center;">800</td><td style="text-align:center;">480</td>     <td style="text-align:center;">1.12</td></tr>
+                            <tr><td>RAE-XL</td>        <td style="text-align:center;">800</td><td style="text-align:center;">177</td>     <td style="text-align:center;">1.13</td></tr>
+                            <tr style="background-color: #f5f5f5;"><td><strong>RAEv2 ($K{=}7$, ours)</strong></td><td style="text-align:center;"><strong>80</strong></td><td style="text-align:center;"><strong>35</strong></td><td style="text-align:center;"><strong>1.06</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text" style="font-size: 0.9em; color: #444; margin-top: 6px;">
+                    <strong>Training efficiency.</strong> Compared to gFID, E@FID-$k$ shows much better variance across methods. Notably, RAE marks a huge jump over previous methods, going from 480 to 177. RAEv2 further improves, achieving E@FID-2 of just <strong>35 epochs</strong>.
+                </p>
+
+                <div class="suggestion-box">
+                    <p><span class="suggestion-label">Suggestion.</span> Incremental improvements in absolute gFID values might provide limited signal for practical applications. Inspired by the recent speedrun in the language domain, we also report <em>training convergence</em> using <strong>E@FID-$k$</strong> (epochs to reach unguided gFID $\le k$).</p>
+                </div>
+
+                <h3 class="text" style="font-size: 1.15em; margin-top: 1.8em; margin-bottom: 0.4em;">Representation Fréchet Distance (FD$_r$<sup><a href="#ref-fdr">[14]</a></sup>)</h3>
+                <p class="text">
+                    Beyond gFID, we evaluate sample fidelity in six feature spaces.
+                </p>
+                <div class="table-container" style="margin: 14px 0;">
+                    <table class="data-table" style="width: 100%; font-size: 0.85em;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Method</th>
+                                <th style="text-align: center;">Incep.</th>
+                                <th style="text-align: center;">ConvNeXt</th>
+                                <th style="text-align: center;">DINOv2</th>
+                                <th style="text-align: center;">MAE</th>
+                                <th style="text-align: center;">SigLIP</th>
+                                <th style="text-align: center;">CLIP</th>
+                                <th style="text-align: center;">FD$_r^6$ ↓</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>SiT-XL/2</td>      <td style="text-align:center;">1.26</td><td style="text-align:center;">2.02</td><td style="text-align:center;">7.89</td><td style="text-align:center;">5.62</td><td style="text-align:center;">16.14</td><td style="text-align:center;">17.69</td><td style="text-align:center;">8.44</td></tr>
+                            <tr><td>DDT-XL</td>        <td style="text-align:center;">0.75</td><td style="text-align:center;">1.02</td><td style="text-align:center;">4.26</td><td style="text-align:center;">4.11</td><td style="text-align:center;">10.16</td><td style="text-align:center;">13.86</td><td style="text-align:center;">5.70</td></tr>
+                            <tr><td>SiT-XL/2-REPA</td> <td style="text-align:center;">0.85</td><td style="text-align:center;">1.22</td><td style="text-align:center;">4.27</td><td style="text-align:center;">3.85</td><td style="text-align:center;">9.87</td><td style="text-align:center;">12.65</td><td style="text-align:center;">5.45</td></tr>
+                            <tr><td>LightningDiT</td>  <td style="text-align:center;">0.85</td><td style="text-align:center;">1.09</td><td style="text-align:center;">3.76</td><td style="text-align:center;">3.02</td><td style="text-align:center;">8.47</td><td style="text-align:center;">10.21</td><td style="text-align:center;">4.57</td></tr>
+                            <tr><td>REG</td>           <td style="text-align:center;">0.92</td><td style="text-align:center;">1.14</td><td style="text-align:center;">3.45</td><td style="text-align:center;">3.02</td><td style="text-align:center;">8.42</td><td style="text-align:center;">10.86</td><td style="text-align:center;">4.64</td></tr>
+                            <tr><td>REPA-E</td>        <td style="text-align:center;">0.70</td><td style="text-align:center;">1.28</td><td style="text-align:center;">2.44</td><td style="text-align:center;"><strong>2.52</strong></td><td style="text-align:center;">5.04</td><td style="text-align:center;">6.28</td><td style="text-align:center;">3.04</td></tr>
+                            <tr><td>RAE-XL</td>        <td style="text-align:center;">0.69</td><td style="text-align:center;">1.79</td><td style="text-align:center;">2.11</td><td style="text-align:center;">3.30</td><td style="text-align:center;">3.79</td><td style="text-align:center;">7.87</td><td style="text-align:center;">3.26</td></tr>
+                            <tr style="background-color: #f5f5f5;"><td><strong>RAEv2 ($K{=}7$, ours)</strong></td><td style="text-align:center;"><strong>0.64</strong></td><td style="text-align:center;"><strong>0.77</strong></td><td style="text-align:center;"><strong>1.15</strong></td><td style="text-align:center;">2.67</td><td style="text-align:center;"><strong>2.54</strong></td><td style="text-align:center;"><strong>5.21</strong></td><td style="text-align:center;"><strong>2.17</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text" style="font-size: 0.9em; color: #444; margin-top: 6px;">
+                    <strong>Representation Fréchet Distance.</strong> FD$_r$ measured in 6 feature spaces, with FD$_r^6$ as the average. All baselines train for 800 epochs. RAEv2 achieves state-of-the-art FD$_r^6$ of <strong>2.17</strong> in just <strong>80 epochs</strong> without any post-training.
+                </p>
             </div>
         </div>
 
@@ -469,12 +673,109 @@
 
             <div id="generalization-t2i" style="margin-top: 1.5em;">
                 <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">4.1 T2I Generation</h2>
-                <!-- TODO -->
+
+                <p class="text">
+                    We also validate our approach for large-scale text-to-image generation. We simply adapt DiT$^{DH}$-XL for T2I by replacing the in-context class-embedding tokens with 256 text-condition tokens from a Qwen3-0.6B model.
+                </p>
+
+                <d-figure id="fig-t2i-qual">
+                    <figure>
+                        <img data-zoomable="" draggable="false" src="assets/t2i_qualitative_p1.png" alt="T2I qualitative samples">
+                        <figcaption>
+                            <strong>Text-to-image qualitative samples at 256×256.</strong>
+                        </figcaption>
+                    </figure>
+                </d-figure>
+
+                <div class="table-container" style="margin: 18px auto 4px; max-width: 560px;">
+                    <table class="data-table" style="width: 100%; font-size: 0.9em;">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="text-align: left;">Method</th>
+                                <th colspan="2" style="text-align: center;">Pretraining</th>
+                                <th colspan="2" style="text-align: center;">Finetuning</th>
+                            </tr>
+                            <tr>
+                                <th style="text-align: center;">GenEval ↑</th>
+                                <th style="text-align: center;">DPG ↑</th>
+                                <th style="text-align: center;">GenEval ↑</th>
+                                <th style="text-align: center;">DPG ↑</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Flux-VAE</td><td style="text-align:center;">41.7</td><td style="text-align:center;">77.6</td><td style="text-align:center;">78.3</td><td style="text-align:center;">79.2</td></tr>
+                            <tr><td>RAE</td><td style="text-align:center;">58.4</td><td style="text-align:center;">80.1</td><td style="text-align:center;">81.5</td><td style="text-align:center;">80.6</td></tr>
+                            <tr style="background-color: #f5f5f5;"><td><strong>RAEv2 (ours)</strong></td><td style="text-align:center;"><strong>62.4</strong></td><td style="text-align:center;"><strong>81.7</strong></td><td style="text-align:center;"><strong>82.7</strong></td><td style="text-align:center;"><strong>82.3</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text" style="font-size: 0.9em; color: #444; margin-top: 6px; text-align: center;">
+                    <strong>Quantitative text-to-image generation results.</strong> RAEv2 leads to consistent improvements over Flux-VAE and the original RAE for T2I generation.
+                </p>
             </div>
 
-            <div id="generalization-wm" style="margin-top: 2em;">
+            <div id="generalization-wm" style="margin-top: 2.5em;">
                 <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">4.2 World Models</h2>
-                <!-- TODO -->
+
+                <p class="text">
+                    We further test our improved training recipe (RAEv2) on the navigation world model task<sup><a href="https://arxiv.org/abs/2412.03572" target="_blank">[12]</a></sup>. Given $N{=}4$ past RGB frames, a sequence of egocentric actions, and a target time step, the model predicts the future RGB frame autoregressively. We train on RECON<sup><a href="https://arxiv.org/abs/2310.07896" target="_blank">[13]</a></sup> at 4 FPS, reusing the DiT$^{DH}$-XL backbone and flow-matching recipe from our ImageNet experiments.
+                </p>
+
+                <p class="text">
+                    <strong>Video prediction quality.</strong> RAEv2-NWM achieves an FVD of <strong>105.61</strong> on RECON, substantially better than DIAMOND, NWM, and RAE. The same ordering holds at every horizon from 1 to 16 seconds on both FID and LPIPS. Qualitative rollouts also exhibit much less flickering between consecutive frames.
+                </p>
+
+                <d-figure id="fig-nwm-horizon">
+                    <figure>
+                        <img data-zoomable="" draggable="false" src="assets/fig_horizon_compare_selected.png" alt="NWM horizon comparison">
+                        <figcaption>
+                            <strong>Future state prediction across rollout horizons.</strong> RAEv2-NWM (ours) vs. baselines at 1 and 4 FPS, up to 16 seconds of generated video on RECON.
+                        </figcaption>
+                    </figure>
+                </d-figure>
+
+                <div class="table-container" style="margin: 18px auto 4px; max-width: 640px;">
+                    <table class="data-table" style="width: 100%; font-size: 0.9em;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: center;">Method</th>
+                                <th style="text-align: center;">DIAMOND</th>
+                                <th style="text-align: center;">NWM</th>
+                                <th style="text-align: center;">RAE</th>
+                                <th style="text-align: center; background-color: #f5f5f5;"><strong>RAEv2 (ours)</strong></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="text-align: center;">FVD ↓</td>
+                                <td style="text-align: center;">762.73</td>
+                                <td style="text-align: center;">200.97</td>
+                                <td style="text-align: center;">312.01</td>
+                                <td style="text-align: center; background-color: #f5f5f5;"><strong>105.61</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text" style="font-size: 0.88em; color: #555; margin-top: 4px; text-align: center;">
+                    Video prediction quality up to 16s on RECON.
+                </p>
+
+                <p class="text">
+                    <strong>Importance of generalized formulation.</strong> A large fraction of these gains comes from the generalized RAE formulation (Section 2.1). Earlier encoder layers retain low-level texture and geometry critical for temporally consistent navigation rollouts. This leads to better future-state prediction and video quality across rollout horizons.
+                </p>
+
+                <p class="text">
+                    <strong>Convergence speed.</strong> We also find that the generalized formulation leads to significant improvements in convergence speed for NWM. Since the model relies on features from previous frames, a representation that captures more low-level details not only gives better final performance but also allows much faster training.
+                </p>
+
+                <d-figure id="fig-nwm-conv" style="margin-top: 18px;">
+                    <figure style="max-width: 70%; margin: 0 auto;">
+                        <img data-zoomable="" draggable="false" src="assets/fig_training_convergence_nwm.png" alt="NWM training convergence" style="width: 100%;">
+                        <figcaption>
+                            <strong>Convergence speed on RECON validation.</strong> FID and LPIPS over training steps for RAE vs. RAEv2-NWM (ours), single-shot prediction with target offset $\in [1, 8]$ frames at 4 FPS.
+                        </figcaption>
+                    </figure>
+                </d-figure>
             </div>
         </div>
 
@@ -483,7 +784,16 @@
         <!-- Conclusion -->
         <div id="conclusion" class="conclusion-block">
             <h1 class="text">5. Conclusion</h1>
-            <!-- TODO -->
+
+            <p class="text">
+                We study an improved baseline which simplifies and improves RAE. We find that frozen vision encoders themselves contain low-level details for reconstruction. Simply aggregating the last $K$ layers leads to Pareto-optimal reconstruction-generation performance.
+            </p>
+            <p class="text">
+                We next perform large-scale empirical analysis showing that RAE and REPA exhibit complementary working mechanisms. Their combination is not only useful but also simplifies guidance with RAE. Furthermore it enables stronger representations (e.g., DINOv3-L) which excel in both spatial and global performance to also give better generation performance.
+            </p>
+            <p class="text">
+                Overall, RAEv2 achieves <strong>10× faster convergence</strong> over RAE, improves reconstruction, and achieves state-of-the-art gFID and FD$_r^6$ in just <strong>80 epochs</strong> without any post-training. We also validate our improved recipe across diverse tasks, including T2I generation and world models, showing consistent improvements. We hope our work provides useful insights for practical adoption of representation autoencoders.
+            </p>
         </div>
 
     </d-article>
@@ -500,6 +810,26 @@
   year   = {2026},
 }</pre>
         </div>
+
+        <h3 id="references">References</h3>
+        <ol class="references-list" style="font-size: 0.9em; line-height: 1.55; color: #444; padding-left: 1.5em;">
+            <li id="ref-rae">Zheng, B., Ma, N., Tong, S., &amp; Xie, S. (2025). Diffusion Transformers with Representation Autoencoders. <em><a href="https://arxiv.org/abs/2510.11690" target="_blank">arXiv:2510.11690</a></em>.</li>
+            <li id="ref-repa">Yu, S., Kwak, S., Jang, H., Jeong, J., Huang, J., Shin, J., &amp; Xie, S. (2024). Representation Alignment for Generation: Training Diffusion Transformers Is Easier Than You Think. <em><a href="https://arxiv.org/abs/2410.06940" target="_blank">arXiv:2410.06940</a></em>.</li>
+            <li id="ref-irepa">Singh, J., Leng, X., Wu, Z., Zheng, L., Zhang, R., Shechtman, E., &amp; Xie, S. (2025). What Matters for Representation Alignment: Global Information or Spatial Structure? <em><a href="https://arxiv.org/abs/2512.10794" target="_blank">arXiv:2512.10794</a></em>.</li>
+            <li id="ref-cfg">Ho, J., &amp; Salimans, T. (2022). Classifier-Free Diffusion Guidance. <em><a href="https://arxiv.org/abs/2207.12598" target="_blank">arXiv:2207.12598</a></em>.</li>
+            <li id="ref-ag">Karras, T., Aittala, M., Kynkäänniemi, T., Lehtinen, J., Aila, T., &amp; Laine, S. (2024). Guiding a Diffusion Model with a Bad Version of Itself (AutoGuidance). <em>NeurIPS</em>.</li>
+            <li id="ref-jit">Li, T., &amp; He, K. (2025). Back to Basics: Let Denoising Generative Models Denoise (JiT, x-prediction). <em><a href="https://arxiv.org/abs/2511.13720" target="_blank">arXiv:2511.13720</a></em>.</li>
+            <li id="ref-internalguidance">Zhou, X., Li, Q., Hu, X., Chen, H., &amp; Gu, S. (2025). Guiding a Diffusion Transformer with the Internal Dynamics of Itself. <em><a href="https://arxiv.org/abs/2512.24176" target="_blank">arXiv:2512.24176</a></em>.</li>
+            <li id="ref-dinov2">Oquab, M., et al. (2024). DINOv2: Learning Robust Visual Features without Supervision. <em>TMLR</em>. <a href="https://arxiv.org/abs/2304.07193" target="_blank">arXiv:2304.07193</a>.</li>
+            <li id="ref-dinov3">Siméoni, O., et al. (2025). DINOv3. <em><a href="https://arxiv.org/abs/2508.10104" target="_blank">arXiv:2508.10104</a></em>.</li>
+            <li id="ref-dit">Peebles, W., &amp; Xie, S. (2023). Scalable Diffusion Models with Transformers (DiT). <em>ICCV</em>. <a href="https://arxiv.org/abs/2212.09748" target="_blank">arXiv:2212.09748</a>.</li>
+            <li id="ref-sit">Ma, N., Goldstein, M., Albergo, M., Boffi, N., Vanden-Eijnden, E., &amp; Xie, S. (2024). SiT: Exploring Flow and Diffusion-Based Generative Models with Scalable Interpolant Transformers. <em>ECCV</em>. <a href="https://arxiv.org/abs/2401.08740" target="_blank">arXiv:2401.08740</a>.</li>
+            <li id="ref-nwm">Bar, A., Zhou, G., Tran, D., Darrell, T., &amp; LeCun, Y. (2024). Navigation World Models. <em><a href="https://arxiv.org/abs/2412.03572" target="_blank">arXiv:2412.03572</a></em>.</li>
+            <li id="ref-recon">Sridhar, A., Shah, D., Glossop, C., &amp; Levine, S. (2023). NoMaD: Goal Masked Diffusion Policies for Navigation and Exploration. <em><a href="https://arxiv.org/abs/2310.07896" target="_blank">arXiv:2310.07896</a></em>.</li>
+            <li id="ref-fdr">Yang, J., Geng, Z., Ju, X., Tian, Y., &amp; Wang, Y. (2026). Representation Fréchet Loss for Visual Generation.</li>
+            <li id="ref-riprepa">Xie, S. (2025). RIP REPA. <em><a href="https://x.com/sainingxie/status/1977936727839736189" target="_blank">x.com/sainingxie</a></em>.</li>
+            <li id="ref-dinosae">Chang, H., Cha, B., &amp; Ye, J. C. (2026). DINO-SAE: DINO Spherical Autoencoder for High-Fidelity Image Reconstruction and Generation. <em><a href="https://arxiv.org/abs/2601.22904" target="_blank">arXiv:2601.22904</a></em>.</li>
+        </ol>
 
         <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #888; text-align: center;">
             <p>We thank the <a href="https://rae-dit.github.io/" target="_blank">RAE</a>, <a href="https://end2end-diffusion.github.io/repa-e/" target="_blank">REPA-E</a>, and <a href="https://end2end-diffusion.github.io/irepa/" target="_blank">iREPA</a> projects for inspiration. Page template adapted from End2End Diffusion.</p>
@@ -533,7 +863,7 @@ function fallbackCopy(text, btn) {
 document.addEventListener('DOMContentLoaded', function() {
     const tocContainer = document.querySelector('.toc-container');
     const tocLinks = document.querySelectorAll('.toc-container a');
-    const sections = ['overview', 'method', 'method-generalized-rae', 'method-complementary', 'method-self-guidance', 'results', 'results-ablations', 'results-convergence', 'results-reconstruction', 'generalization', 'generalization-t2i', 'generalization-wm', 'conclusion'];
+    const sections = ['overview', 'method', 'method-generalized-rae', 'method-complementary', 'method-self-guidance', 'results', 'results-convergence', 'results-efficiency', 'generalization', 'generalization-t2i', 'generalization-wm', 'conclusion'];
 
     function updateTOC() {
         const scrollPos = window.scrollY;

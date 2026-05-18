@@ -220,14 +220,14 @@ body {
 .sidenote {
     display: block;
     font-family: var(--font-sans);
-    font-size: 0.85rem;
+    font-size: 1.02rem;
     line-height: 1.5;
     color: var(--text-muted);
     margin: var(--space-md) 0;
     padding: var(--space-sm) var(--space-md);
     background: #f8f9fa;
     border-left: 3px solid #94a3b8;
-    font-style: italic;
+    font-style: normal;
     border-radius: 0 4px 4px 0;
 }
 
