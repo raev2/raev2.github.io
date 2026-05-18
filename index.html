@@ -289,7 +289,7 @@
                 <figure>
                     <img data-zoomable="" draggable="false" src="assets/recon_comparison.png" alt="Qualitative reconstruction comparisons">
                     <figcaption>
-                        <strong>Qualitative reconstruction comparisons.</strong> See <a href="#method-generalized-rae">Section 2.1</a> for detailed results.
+                        <strong>Qualitative reconstruction comparisons.</strong> RAEv2 performs competitively with proprietary VAEs. Please see <a href="#method-generalized-rae">Section 2.1</a> for more detailed results.
                     </figcaption>
                 </figure>
             </d-figure>
@@ -627,7 +627,7 @@
                     </table>
                 </div>
                 <p class="text" style="font-size: 0.9em; color: #444; margin-top: 6px;">
-                    <strong>Training efficiency.</strong> Compared to gFID, E@FID-$k$ shows much better variance across methods. Notably, RAE marks a huge jump over previous methods, going from 480 to 177. RAEv2 further improves, achieving E@FID-2 of just <strong>35 epochs</strong>.
+                    <strong>Training efficiency.</strong> Compared to gFID, E@FID-$k$ (epochs to reach unguided gFID $\le k$; $k{=}2$ by default) shows much better variance across methods. Notably, RAE marks a huge jump over previous methods, going from 480 to 177. RAEv2 further improves, achieving E@FID-2 of just <strong>35 epochs</strong>.
                 </p>
 
                 <div class="suggestion-box">
@@ -730,15 +730,6 @@
                     <strong>Video prediction quality.</strong> RAEv2-NWM achieves an FVD of <strong>105.61</strong> on RECON, substantially better than DIAMOND, NWM, and RAE. The same ordering holds at every horizon from 1 to 16 seconds on both FID and LPIPS. Qualitative rollouts also exhibit much less flickering between consecutive frames.
                 </p>
 
-                <d-figure id="fig-nwm-horizon">
-                    <figure>
-                        <img data-zoomable="" draggable="false" src="assets/fig_horizon_compare_selected.png" alt="NWM horizon comparison">
-                        <figcaption>
-                            <strong>Future state prediction across rollout horizons.</strong> RAEv2-NWM (ours) vs. baselines at 1 and 4 FPS, up to 16 seconds of generated video on RECON.
-                        </figcaption>
-                    </figure>
-                </d-figure>
-
                 <div class="table-container" style="margin: 18px auto 4px; max-width: 640px;">
                     <table class="data-table" style="width: 100%; font-size: 0.9em;">
                         <thead>
@@ -764,6 +755,54 @@
                 <p class="text" style="font-size: 0.88em; color: #555; margin-top: 4px; text-align: center;">
                     Video prediction quality up to 16s on RECON.
                 </p>
+
+                <div class="sidenote-container">
+                <d-figure id="fig-nwm-video">
+                    <figure>
+                        <div style="display: flex; justify-content: center; margin-bottom: 8px;">
+                            <button type="button" id="nwm-video-toggle" onclick="toggleNwmVideos()" style="padding: 6px 14px; border: 1px solid #d4d4d4; background: #fff; color: #1f2937; border-radius: 6px; cursor: pointer; font-size: 0.9em;">
+                                <i class="fas fa-pause" style="margin-right: 6px;"></i>Pause
+                            </button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                            <div style="text-align: center;">
+                                <video class="nwm-video" src="assets/videos/nwm_t0002_gt.mp4" autoplay loop muted playsinline preload="auto" style="width: 100%; border-radius: 4px;"></video>
+                                <div style="font-size: 0.85em; color: #555; margin-top: 4px;">Ground Truth</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <video class="nwm-video" src="assets/videos/nwm_t0002_rae.mp4" autoplay loop muted playsinline preload="auto" style="width: 100%; border-radius: 4px;"></video>
+                                <div style="font-size: 0.85em; color: #555; margin-top: 4px;">RAE</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <video class="nwm-video" src="assets/videos/nwm_t0002_raev2.mp4" autoplay loop muted playsinline preload="auto" style="width: 100%; border-radius: 4px;"></video>
+                                <div style="font-size: 0.85em; color: #555; margin-top: 4px;">RAEv2 (ours)</div>
+                            </div>
+                        </div>
+                        <figcaption>
+                            <strong>Autoregressive rollouts on RECON.</strong> RAE shows constant flickering (different number of windows across consecutive frames). RAEv2 retains local spatial information much better, leading to better interframe consistency and video generation for navigation world models. This leads to substantially better FVD performance (refer table) and much better adherence to action conditioning (more similar to GT). Videos shown at 2× playback speed; original ground truth video at 4 FPS.
+                        </figcaption>
+                    </figure>
+                </d-figure>
+                <aside class="sidenote">RAE leads to constant flickering (different number of windows across consecutive frames). RAEv2 retains local spatial information much better, leading to much better FVD.</aside>
+                </div>
+
+                <d-figure id="fig-nwm-static">
+                    <figure>
+                        <img data-zoomable="" draggable="false" src="assets/qualitative-nwm-vis.png" alt="Fixed-frame qualitative comparison">
+                        <figcaption>
+                            <strong>Fixed-frame comparison.</strong> Consecutive frames at $t$ and $t{+}0.25$s for ground truth, RAE, and RAEv2-NWM. RAE flickers across frames (e.g., different number of windows); RAEv2-NWM preserves low-level detail and scene structure across time.
+                        </figcaption>
+                    </figure>
+                </d-figure>
+
+                <d-figure id="fig-nwm-horizon">
+                    <figure>
+                        <img data-zoomable="" draggable="false" src="assets/fig_horizon_compare_selected.png" alt="NWM horizon comparison">
+                        <figcaption>
+                            <strong>Future state prediction across rollout horizons.</strong> RAEv2-NWM (ours) vs. baselines at 1 and 4 FPS, up to 16 seconds of generated video on RECON.
+                        </figcaption>
+                    </figure>
+                </d-figure>
 
                 <p class="text">
                     <strong>Importance of generalized formulation.</strong> A large fraction of these gains comes from the generalized RAE formulation (Section 2.1). Earlier encoder layers retain low-level texture and geometry critical for temporally consistent navigation rollouts. This leads to better future-state prediction and video quality across rollout horizons.
@@ -840,6 +879,22 @@
             <p>We thank the <a href="https://rae-dit.github.io/" target="_blank">RAE</a>, <a href="https://end2end-diffusion.github.io/repa-e/" target="_blank">REPA-E</a>, and <a href="https://end2end-diffusion.github.io/irepa/" target="_blank">iREPA</a> projects for inspiration. Page template adapted from End2End Diffusion.</p>
         </footer>
     </d-appendix>
+
+<!-- NWM video play/pause toggle -->
+<script>
+function toggleNwmVideos() {
+    const videos = document.querySelectorAll('.nwm-video');
+    const btn = document.getElementById('nwm-video-toggle');
+    const anyPlaying = Array.from(videos).some(v => !v.paused);
+    if (anyPlaying) {
+        videos.forEach(v => v.pause());
+        btn.innerHTML = '<i class="fas fa-play" style="margin-right: 6px;"></i>Play';
+    } else {
+        videos.forEach(v => { v.currentTime = 0; v.play(); });
+        btn.innerHTML = '<i class="fas fa-pause" style="margin-right: 6px;"></i>Pause';
+    }
+}
+</script>
 
 <!-- BibTeX copy -->
 <script>
