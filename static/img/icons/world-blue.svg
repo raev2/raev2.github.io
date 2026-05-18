@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Globe with trajectory for navigation world models -->
+  <circle cx="12" cy="12" r="9" fill="#60a5fa" fill-opacity="0.5" stroke="#2563eb" stroke-width="1.5"/>
+  <path d="M3 12 h18" stroke="#2563eb" stroke-width="1.5"/>
+  <path d="M12 3 a9 12 0 0 1 0 18 a9 12 0 0 1 0 -18" stroke="#2563eb" stroke-width="1.5" fill="none"/>
+  <circle cx="7.5" cy="9" r="1.2" fill="#2563eb"/>
+  <circle cx="14" cy="14.5" r="1.2" fill="#2563eb"/>
+  <path d="M7.5 9 Q11 8 14 14.5" stroke="#2563eb" stroke-width="1.6" fill="none" stroke-dasharray="2 1.5"/>
+</svg>

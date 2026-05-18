@@ -289,45 +289,50 @@
                 <figure>
                     <img data-zoomable="" draggable="false" src="assets/recon_comparison.png" alt="Qualitative reconstruction comparisons">
                     <figcaption>
-                        <strong>Qualitative reconstruction comparisons.</strong> See <a href="#results-reconstruction">Section 3.3</a> for detailed results.
+                        <strong>Qualitative reconstruction comparisons.</strong> See <a href="#method-generalized-rae">Section 2.1</a> for detailed results.
                     </figcaption>
                 </figure>
             </d-figure>
 
             <!-- Jump-to Sections -->
-            <div class="icon-row">
+            <div class="icon-row jump-icon-row">
                 <a href="#method-generalized-rae" class="icon-link">
-                    <img src="./static/img/icons/latent.svg" alt="Generalized RAE" class="icon">
+                    <img src="./static/img/icons/latent-blue.svg" alt="Generalized RAE" class="icon">
                     Generalized<br>RAE
                 </a>
                 <a href="#method-complementary" class="icon-link">
-                    <img src="./static/img/icons/connector.svg" alt="Complementary Mechanism" class="icon">
+                    <img src="./static/img/icons/connector-blue.svg" alt="Complementary Mechanism" class="icon">
                     Complementary<br>Mechanism
                 </a>
                 <a href="#method-self-guidance" class="icon-link">
-                    <img src="./static/img/icons/loop.svg" alt="REPA for Self-Guidance" class="icon">
+                    <img src="./static/img/icons/loop-blue.svg" alt="REPA for Self-Guidance" class="icon">
                     REPA for<br>Self-Guidance
                 </a>
             </div>
 
-            <div class="icon-row">
+            <div class="icon-row jump-icon-row">
                 <a href="#results-convergence" class="icon-link">
-                    <img src="./static/img/icons/quality.svg" alt="Better Generation" class="icon">
+                    <img src="./static/img/icons/quality-blue.svg" alt="Better Generation" class="icon">
                     Better<br>Generation
                 </a>
                 <a href="#results-efficiency" class="icon-link">
-                    <img src="./static/img/icons/speed.svg" alt="Training Efficiency" class="icon">
+                    <img src="./static/img/icons/speed-blue.svg" alt="Training Efficiency" class="icon">
                     Training<br>Efficiency
                 </a>
                 <a href="#method-generalized-rae" class="icon-link">
-                    <img src="./static/img/icons/reconstruction.svg" alt="Better Reconstruction" class="icon">
+                    <img src="./static/img/icons/reconstruction-blue.svg" alt="Better Reconstruction" class="icon">
                     Better<br>Reconstruction
                 </a>
                 <a href="#generalization-wm" class="icon-link">
-                    <img src="./static/img/icons/world.svg" alt="World Models" class="icon">
+                    <img src="./static/img/icons/world-blue.svg" alt="World Models" class="icon">
                     World<br>Models
                 </a>
             </div>
+
+            <p class="click-hint" style="width: 85%;">
+                <img src="./static/img/icons/click.gif" style="width: 1.5rem">
+                <strong>Click to jump to each section.</strong>
+            </p>
         </div>
 
         <hr>
@@ -388,7 +393,7 @@
                             </div>
                         </div>
                         <figcaption>
-                            <strong>Ablation on choice of $K$ for generalized RAE.</strong> Reconstruction (rFID, PSNR) improves monotonically with $K$. Generation is best at small $K$ unguided, and at $K{=}7$ with guidance (gFID <strong>1.06</strong>). DINOv3-L (24 layers), DiT$^{DH}$-XL, 80 epochs.
+                            <strong>Variation in $K$ for generalized representation autoencoders.</strong> By simply varying $K$, we get easy control over reconstruction-generation performance. Interestingly, $K{=}7$ improves reconstruction while also providing the best generation with guidance (gFID <strong>1.06</strong>).
                         </figcaption>
                     </figure>
                 </d-figure>
