@@ -224,7 +224,7 @@
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">2</span>
-                <p class="key-finding-text"><strong>RAE and REPA exhibit complementary working mechanisms.</strong> RAE leverages semantic quality while REPA regularizes spatial structure. This complementary nature allows using the same pretrained representation as both encoder (RAE) and target for intermediate diffusion features (REPA). This also explains why stronger representations like DINOv3-L, which excel in both metrics, achieve the best generation with RAEv2.</p>
+                <p class="key-finding-text"><strong>RAE and REPA exhibit complementary working mechanisms.</strong> RAE leverages semantic quality while REPA regularizes spatial structure. This complementary nature allows using same pretrained representation as both encoder (RAE) and target for intermediate diffusion features (REPA). This also explains why stronger representations like DINOv3-L, which excel in both global and spatial performance, achieve the best generation with RAEv2.</p>
             </div>
             <div class="key-finding">
                 <span class="key-finding-number">3</span>
@@ -259,16 +259,49 @@
                 </figure>
             </d-figure>
 
-            <p class="text">
-                We investigate three design choices for representation autoencoders. Each is independently useful; together they produce <strong>RAEv2</strong>, a recipe with substantially faster convergence, better reconstruction, and simpler guidance.
-            </p>
+            <d-figure id="fig-recon-teaser">
+                <figure>
+                    <img data-zoomable="" draggable="false" src="assets/recon_comparison.png" alt="Qualitative reconstruction comparisons">
+                    <figcaption>
+                        <strong>Qualitative reconstruction comparisons.</strong> See <a href="#results-reconstruction">Section 3.3</a> for detailed results.
+                    </figcaption>
+                </figure>
+            </d-figure>
 
-            <ol class="text">
-                <li><strong><a href="#generalized-rae">Generalized Representation Encoder</a></strong>: define the encoder output as the sum of the last $K$ pretrained-encoder layers, not just the final one.</li>
-                <li><strong><a href="#complementary">RAE + REPA are complementary</a></strong>: use the <em>same</em> representation as both encoder (RAE) and intermediate target (REPA).</li>
-                <li><strong><a href="#free-guidance">REPA as x-prediction</a></strong>: re-parameterize the DiT output so the REPA head itself provides guidance, removing the need for AutoGuidance or a second CFG forward pass.</li>
-            </ol>
+            <!-- Jump-to Sections -->
+            <div class="icon-row">
+                <a href="#method-generalized-rae" class="icon-link">
+                    <img src="./static/img/icons/latent.svg" alt="Generalized RAE" class="icon">
+                    Generalized<br>RAE
+                </a>
+                <a href="#method-complementary" class="icon-link">
+                    <img src="./static/img/icons/connector.svg" alt="Complementary Mechanism" class="icon">
+                    Complementary<br>Mechanism
+                </a>
+                <a href="#method-self-guidance" class="icon-link">
+                    <img src="./static/img/icons/loop.svg" alt="REPA for Self-Guidance" class="icon">
+                    REPA for<br>Self-Guidance
+                </a>
+            </div>
 
+            <div class="icon-row">
+                <a href="#results" class="icon-link">
+                    <img src="./static/img/icons/quality.svg" alt="Better Generation" class="icon">
+                    Better<br>Generation
+                </a>
+                <a href="#results-convergence" class="icon-link">
+                    <img src="./static/img/icons/speed.svg" alt="Training Efficiency" class="icon">
+                    Training<br>Efficiency
+                </a>
+                <a href="#results-reconstruction" class="icon-link">
+                    <img src="./static/img/icons/reconstruction.svg" alt="Better Reconstruction" class="icon">
+                    Better<br>Reconstruction
+                </a>
+                <a href="#generalization-wm" class="icon-link">
+                    <img src="./static/img/icons/world.svg" alt="World Models" class="icon">
+                    World<br>Models
+                </a>
+            </div>
         </div>
 
         <hr>
@@ -279,17 +312,130 @@
 
             <div id="method-generalized-rae" style="margin-top: 1.5em;">
                 <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">2.1 Generalized Representation Encoder</h2>
-                <!-- TODO -->
+
+                <p class="text">
+                    Prior RAE work treats the encoder output as the <em>final-layer</em> feature of a pretrained vision encoder. However, different layers of a pretrained encoder capture complementary features. Can we leverage these features across all layers without encoder finetuning or specialized data?
+                </p>
+
+                <d-figure id="fig-per-layer-viz">
+                    <figure>
+                        <img data-zoomable="" draggable="false" src="assets/fig_per_layer_viz_dinov2b-v2.png" alt="Per-layer feature visualization">
+                        <figcaption>
+                            <strong>Different layers of a pretrained encoder provide complementary features.</strong> Aggregating across layers yields richer representations than using the final layer alone.
+                        </figcaption>
+                    </figure>
+                </d-figure>
+
+                <p class="text">
+                    We consider a simple solution. We define a generalized formulation where the RAE output is the <strong>sum of the last $K$ encoder layers</strong>. The original RAE is recovered at $K{=}1$. By simply varying $K$, we get easy control over reconstruction quality while also <em>improving</em> generation performance and <em>preserving</em> understanding performance. See <a href="#results-ablations">Section 3.1</a> for the full $K$ sweep.
+                </p>
+
+                <div class="finding-box">
+                    <ul>
+                        <li><strong>Finding 1: Generalized Representation Encoders.</strong> Pretrained vision encoders are more than their final layer. Simply aggregating features across layers of a pretrained vision encoder greatly improves reconstruction without encoder finetuning or specialized data (e.g., text, faces).</li>
+                    </ul>
+                </div>
             </div>
 
             <div id="method-complementary" style="margin-top: 2em;">
-                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">2.2 RAE and REPA are Complementary</h2>
-                <!-- TODO -->
+                <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">2.2 RAE and REPA Exhibit Complementary Mechanisms</h2>
+
+                <p class="text">
+                    The prevailing assumption is that RAE eliminates the need for REPA, since RAE already uses the encoder representation as the latent space. Distilling the same representation again to intermediate diffusion layers looks like a wasteful skip connection. We test this assumption at scale across 27 vision encoders and find the opposite: using REPA on top of RAE consistently improves generation. This suggests fundamentally different working mechanisms.
+                </p>
+
+                <h3 class="text" style="font-size: 1.15em; margin-top: 1.5em; margin-bottom: 0.4em;">Working mechanism</h3>
+                <p class="text">
+                    REPA on top of RAE has minimal impact on the <em>peak global semantic information</em> (linear probing) of intermediate diffusion features. It instead substantially improves their <em>spatial self-similarity structure</em>. This effect was identified in <a href="https://end2end-diffusion.github.io/irepa/" target="_blank">iREPA</a>.
+                </p>
+
+                <d-figure id="fig-working-mechanism">
+                    <figure>
+                        <div style="display: grid; grid-template-columns: 29fr 71fr; gap: 12px; align-items: center;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_wm_lp.png" alt="Impact of REPA on global semantics" style="width: 100%;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_wm_selfsim-v1.png" alt="Impact of REPA on spatial structure" style="width: 100%;">
+                        </div>
+                        <figcaption>
+                            <strong>Working mechanism of REPA with RAE.</strong> While REPA applied with RAE has minimal impact on global semantics (left), it significantly improves spatial structure of diffusion features (right).
+                        </figcaption>
+                    </figure>
+                </d-figure>
+
+                <h3 class="text" style="font-size: 1.15em; margin-top: 1.5em; margin-bottom: 0.4em;">Correlation analysis</h3>
+                <p class="text">
+                    To quantify this, we correlate two encoder properties with downstream gFID across 27 encoders: ImageNet linear probing (LP, global semantics) and local distance similarity (LDS, spatial structure). A more negative Pearson $r$ means a stronger predictor of gFID.
+                </p>
+
+                <d-figure id="fig-corr-plots">
+                    <figure>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_corr_repa.png" alt="Correlation for REPA alone" style="width: 100%;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_corr_rae.png" alt="Correlation for RAE alone" style="width: 100%;">
+                            <img data-zoomable="" draggable="false" src="assets/fig_corr_rae_repa.png" alt="Correlation for RAE + REPA" style="width: 100%;">
+                        </div>
+                    </figure>
+                </d-figure>
+
+                <div class="table-container" style="margin: 18px auto 4px; max-width: 520px;">
+                    <table class="data-table" style="width: 100%; font-size: 0.9em;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Method</th>
+                                <th style="text-align: center;">LP ($r$) ↓</th>
+                                <th style="text-align: center;">LDS ($r$) ↓</th>
+                                <th style="text-align: center;">Avg ($r$) ↓</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>REPA alone</td><td style="text-align:center;">+0.34</td><td style="text-align:center;"><strong>&minus;0.89</strong></td><td style="text-align:center;">&minus;0.56</td></tr>
+                            <tr><td>RAE alone</td> <td style="text-align:center;"><strong>&minus;0.81</strong></td><td style="text-align:center;">&minus;0.13</td><td style="text-align:center;">&minus;0.55</td></tr>
+                            <tr style="background-color: #f5f5f5;"><td><strong>RAE + REPA</strong></td><td style="text-align:center;">&minus;0.64</td><td style="text-align:center;">&minus;0.53</td><td style="text-align:center;"><strong>&minus;0.83</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text" style="font-size: 0.9em; color: #555; margin-top: 4px; text-align: center;">
+                    Pearson correlation $r$ with gFID across 27 vision encoders.
+                </p>
+
+                <p class="text" style="margin-top: 1em;">
+                    REPA alone correlates most with spatial structure (LDS). RAE alone benefits most from global semantics (LP). Together, RAE+REPA benefit from encoders strong in <em>both</em>. This is why stronger encoders like DINOv3-L, which excel on both axes, yield the best generation with RAEv2.
+                </p>
+
+                <div class="finding-box">
+                    <ul>
+                        <li><strong>Finding 2: RAE and REPA exhibit complementary working mechanisms.</strong> RAE leverages semantic quality while REPA regularizes spatial structure. This complementary nature allows using same pretrained representation as both encoder (RAE) and target for intermediate diffusion features (REPA). This also explains why stronger representations like DINOv3-L, which excel in both global and spatial performance, achieve the best generation with RAEv2.</li>
+                    </ul>
+                </div>
             </div>
 
             <div id="method-self-guidance" style="margin-top: 2em;">
                 <h2 class="text" style="font-size: 1.4em; margin-bottom: 0.5em;">2.3 REPA for Self-Guidance</h2>
-                <!-- TODO -->
+
+                <p class="text">
+                    <strong>RAE struggles with traditional CFG.</strong> Instead, the original RAE relies on AutoGuidance, which requires training a separate, weaker diffusion model as the guidance baseline. This adds compute and complexity.
+                </p>
+
+                <p class="text">
+                    <strong>REPA is x-prediction in RAE latent space.</strong> In RAE, the clean latent <em>is</em> the encoder representation, $\mathbf{x} = E(\mathbf{I})$. The REPA projection head $h_\phi$ maps early-layer intermediate features $\mathbf{h}$ to predict the clean latent $\hat{\mathbf{x}}_{\text{repa}} = h_\phi(\mathbf{h})$. This is exactly x-prediction in the RAE latent space. Because $h_\phi$ is a lightweight MLP that only sees early-layer features, its prediction is naturally weaker than the full model's, playing the same role as the smaller AutoGuidance model.
+                </p>
+
+                <p class="text">
+                    If we reformulate the full DiT output also as x-prediction (rather than velocity), both outputs live in the same space. We can then apply internal guidance directly within a single forward pass:
+                </p>
+
+                <p class="text" style="text-align: center;">
+                    $\hat{\mathbf{x}}_{\text{guided}} \;=\; \hat{\mathbf{x}}_{\text{full}} \;+\; w \cdot \bigl(\hat{\mathbf{x}}_{\text{full}} - \hat{\mathbf{x}}_{\text{repa}}\bigr)$
+                </p>
+
+                <p class="text">
+                    The REPA head runs <em>in the same forward pass</em> as the main model. Compared to AutoGuidance this removes the secondary model entirely. Compared to CFG it removes the extra unconditional pass, halving the NFEs at inference.
+                </p>
+
+                <div class="finding-box">
+                    <ul>
+                        <li><strong>Finding 3: REPA enables self-guidance.</strong> REPA is x-prediction in RAE latent space. By reformulating the output head also as x-prediction, the REPA head itself can be used for internal guidance. This eliminates the need for a separate model (AutoGuidance) or extra forward pass (CFG).</li>
+                    </ul>
+                </div>
             </div>
         </div>
 
